@@ -1,0 +1,35 @@
+{
+  "name": "OpenHands",
+  "short_name": "OpenHands",
+  "description": "AI Software Agent - Build, test, and deploy code with AI agents",
+  "start_url": "https://app.all-hands.dev/",
+  "display": "standalone",
+  "background_color": "#1a1a2e",
+  "theme_color": "#6366f1",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ],
+  "categories": ["productivity", "utilities"],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "New Conversation",
+      "short_name": "New",
+      "description": "Start a new OpenHands conversation",
+      "url": "https://app.all-hands.dev/conversation/new",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}
