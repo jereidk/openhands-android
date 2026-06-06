@@ -85,7 +85,6 @@ public class MainActivity extends Activity {
         
         // Caché
         settings.setCacheMode(WebSettings.LOAD_DEFAULT);
-        settings.setAppCacheEnabled(true);
         
         // Viewport
         settings.setUseWideViewPort(true);
@@ -99,7 +98,6 @@ public class MainActivity extends Activity {
         
         // Mejoras de rendimiento
         settings.setRenderPriority(WebSettings.RenderPriority.HIGH);
-        settings.setEnableSmoothTransition(true);
         
         // User-Agent personalizado
         String userAgent = settings.getUserAgentString();
