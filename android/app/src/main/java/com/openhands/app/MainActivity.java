@@ -2,182 +2,314 @@ package com.openhands.app;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Intent;
+import android.content.pm.ApplicationInfo;
 import android.graphics.Bitmap;
 import android.net.Uri;
+import android.net.http.SslError;
+import android.os.Build;
 import android.os.Bundle;
-import android.os.Environment;
+import android.util.Log;
+import android.view.View;
+import android.view.Window;
+import android.webkit.ClientCertRequest;
+import android.webkit.CookieManager;
+import android.webkit.DownloadListener;
+import android.webkit.SslErrorHandler;
 import android.webkit.WebChromeClient;
+import android.webkit.WebResourceError;
 import android.webkit.WebResourceRequest;
+import android.webkit.WebResourceResponse;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
-import android.widget.FrameLayout;
 import android.widget.ProgressBar;
-import android.view.View;
-import android.view.Window;
-import android.webkit.DownloadListener;
-import java.io.File;
-import java.io.FileOutputStream;
+import android.widget.Toast;
+import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.Map;
+import java.util.HashMap;
 
 public class MainActivity extends Activity {
 
+    private static final String TAG = "OpenHands";
     private WebView webView;
     private ProgressBar progressBar;
-    private String baseUrl = "https://app.all-hands.dev/";
+    private View errorView;
     
-    // URL para el onboarding (login con GitHub)
-    private String loginUrl = "https://app.all-hands.dev/login?login_method=github";
+    // URLs configurables
+    private static final String BASE_URL = "https://app.all-hands.dev/";
+    private static final String LOGIN_URL = "https://app.all-hands.dev/login?login_method=github";
+
+    // URLs externas que se abren en navegador externo
+    private static final String[] EXTERNAL_URL_PREFIXES = {
+        "https://github.com/login",
+        "https://gitlab.com/oauth",
+        "https://bitbucket.org/oauth",
+        "https://discord.com/oauth",
+        "https://discord.gg",
+        "https://docs.openhands.dev",
+        "https://www.all-hands.dev/terms",
+        "https://www.all-hands.dev/privacy"
+    };
 
     @SuppressLint("SetJavaScriptEnabled")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
-        // Quitar la barra de título para pantalla completa
+        // Pantalla completa sin título
         requestWindowFeature(Window.FEATURE_NO_TITLE);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            if ((getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0) {
+                WebView.setWebContentsDebuggingEnabled(true);
+            }
+        }
         
         setContentView(R.layout.activity_main);
         
-        // Inicializar WebView
         webView = findViewById(R.id.webView);
         progressBar = findViewById(R.id.progressBar);
+        errorView = findViewById(R.id.errorView);
         
-        // Configurar WebView
         setupWebView();
-        
-        // Manejar deep links desde el intent
+        setupErrorView();
         handleIntent(getIntent());
     }
 
     @SuppressLint("SetJavaScriptEnabled")
     private void setupWebView() {
-        WebSettings webSettings = webView.getSettings();
+        WebSettings settings = webView.getSettings();
         
-        // Habilitar JavaScript
-        webSettings.setJavaScriptEnabled(true);
-        webSettings.setJavaScriptCanOpenWindowsAutomatically(true);
+        // JavaScript (esencial para OpenHands)
+        settings.setJavaScriptEnabled(true);
+        settings.setJavaScriptCanOpenWindowsAutomatically(true);
         
-        // Habilitar DOM storage
-        webSettings.setDomStorageEnabled(true);
-        webSettings.setDatabaseEnabled(true);
+        // DOM y almacenamiento
+        settings.setDomStorageEnabled(true);
+        settings.setDatabaseEnabled(true);
+        settings.setAllowFileAccess(true);
         
-        // Habilitar caché
-        webSettings.setCacheMode(WebSettings.LOAD_DEFAULT);
-        webSettings.setAppCacheEnabled(true);
+        // Caché
+        settings.setCacheMode(WebSettings.LOAD_DEFAULT);
+        settings.setAppCacheEnabled(true);
         
-        // Configuración de viewport
-        webSettings.setUseWideViewPort(true);
-        webSettings.setLoadWithOverviewMode(true);
+        // Viewport
+        settings.setUseWideViewPort(true);
+        settings.setLoadWithOverviewMode(true);
+        settings.setSupportZoom(true);
+        settings.setBuiltInZoomControls(true);
+        settings.setDisplayZoomControls(false);
         
-        // Habilitar zoom
-        webSettings.setBuiltInZoomControls(true);
-        webSettings.setDisplayZoomControls(false);
+        // Media y permisos
+        settings.setMediaPlaybackRequiresUserGesture(false);
         
-        // Permitir acceso a archivos locales
-        webSettings.setAllowFileAccess(true);
-        webSettings.setAllowContentAccess(true);
+        // Mejoras de rendimiento
+        settings.setRenderPriority(WebSettings.RenderPriority.HIGH);
+        settings.setEnableSmoothTransition(true);
         
-        // Habilitar WebView para mejor rendimiento
-        webSettings.setRenderPriority(WebSettings.RenderPriority.HIGH);
+        // User-Agent personalizado
+        String userAgent = settings.getUserAgentString();
+        settings.setUserAgentString(userAgent + " OpenHands-Android/1.0");
         
-        // Configurar User-Agent
-        webSettings.setUserAgentString(webSettings.getUserAgentString() + " OpenHands-Android/1.0");
-        
-        // Habilitar hardware acceleration
+        // Hardware acceleration
         webView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
         
-        // Configurar WebViewClient para manejar navegación
+        // Cookies
+        CookieManager.getInstance().setAcceptCookie(true);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true);
+        }
+        
+        // WebViewClient para navegación
         webView.setWebViewClient(new WebViewClient() {
             @Override
             public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
-                String url = request.getUrl().toString();
-                
-                // Para deep links de GitHub, OAuth, etc., abrir en el navegador
-                if (url.startsWith("https://github.com/login") ||
-                    url.startsWith("https://gitlab.com/oauth") ||
-                    url.startsWith("https://bitbucket.org/oauth") ||
-                    url.startsWith("mailto:") ||
-                    url.startsWith("tel:")) {
-                    Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
-                    startActivity(intent);
-                    return true;
-                }
-                
-                // Permitir todas las demás URLs dentro del WebView
-                return false;
+                return shouldOverrideUrl(request.getUrl().toString());
             }
-
+            
             @Override
             public void onPageStarted(WebView view, String url, Bitmap favicon) {
                 super.onPageStarted(view, url, favicon);
                 progressBar.setVisibility(View.VISIBLE);
+                errorView.setVisibility(View.GONE);
             }
-
+            
             @Override
             public void onPageFinished(WebView view, String url) {
                 super.onPageFinished(view, url);
                 progressBar.setVisibility(View.GONE);
             }
-        });
-        
-        // Configurar WebChromeClient para diálogos
-        webView.setWebChromeClient(new WebChromeClient() {
+            
             @Override
-            public void onProgressChanged(WebView view, int newProgress) {
-                super.onProgressChanged(view, newProgress);
-                progressBar.setProgress(newProgress);
+            public void onReceivedError(WebView view, WebResourceRequest request, WebResourceError error) {
+                if (request.isForMainFrame()) {
+                    showError("Error de conexión: " + error.getDescription());
+                }
+            }
+            
+            @Override
+            public void onReceivedHttpError(WebView view, WebResourceRequest request, WebResourceResponse errorResponse) {
+                if (request.isForMainFrame() && errorResponse.getStatusCode() >= 500) {
+                    showError("Error del servidor (500+). Intenta más tarde.");
+                }
+            }
+            
+            // Manejar errores SSL (para desarrollo)
+            @Override
+            public void onReceivedSslError(WebView view, SslErrorHandler handler, SslError error) {
+                // En producción, comentar esta línea
+                handler.proceed();
             }
         });
         
-        // Configurar descarga de archivos
+        // WebChromeClient para diálogos
+        webView.setWebChromeClient(new WebChromeClient() {
+            @Override
+            public void onProgressChanged(WebView view, int newProgress) {
+                progressBar.setProgress(newProgress);
+            }
+            
+            @Override
+            public void onReceivedTitle(WebView view, String title) {
+                getActionBar().setTitle(title);
+            }
+            
+            @Override
+            public void onGeolocationPermissionsShowPrompt(String origin, android.webkit.GeolocationPermissions.Callback callback) {
+                callback.invoke(origin, true, false);
+            }
+        });
+        
+        // Descargas
         webView.setDownloadListener(new DownloadListener() {
             @Override
-            public void onDownloadStart(String url, String userAgent,
-                                        String contentDisposition, String mimeType,
-                                        long contentLength) {
-                // Abrir descarga en el navegador
+            public void onDownloadStart(String url, String userAgent, String contentDisposition, String mimeType, long contentLength) {
                 Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                 startActivity(intent);
             }
         });
         
-        // Cargar la URL inicial
-        webView.loadUrl(baseUrl);
+        // Cargar URL inicial
+        webView.loadUrl(getInitialUrl());
     }
-
+    
+    private String getInitialUrl() {
+        Intent intent = getIntent();
+        if (intent != null && Intent.ACTION_VIEW.equals(intent.getAction())) {
+            Uri data = intent.getData();
+            if (data != null) {
+                return data.toString();
+            }
+        }
+        return BASE_URL;
+    }
+    
+    private boolean shouldOverrideUrl(String url) {
+        // Verificar URLs externas
+        for (String prefix : EXTERNAL_URL_PREFIXES) {
+            if (url.startsWith(prefix)) {
+                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(intent);
+                return true;
+            }
+        }
+        
+        // Abrir mailto: y tel: en apps correspondientes
+        if (url.startsWith("mailto:") || url.startsWith("tel:") || url.startsWith("sms:")) {
+            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
+            return true;
+        }
+        
+        return false;
+    }
+    
+    private void setupErrorView() {
+        View retryButton = errorView.findViewById(R.id.retryButton);
+        if (retryButton != null) {
+            retryButton.setOnClickListener(v -> {
+                errorView.setVisibility(View.GONE);
+                webView.loadUrl(BASE_URL);
+            });
+        }
+        
+        View openBrowserButton = errorView.findViewById(R.id.openBrowserButton);
+        if (openBrowserButton != null) {
+            openBrowserButton.setOnClickListener(v -> {
+                Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(BASE_URL));
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(intent);
+            });
+        }
+    }
+    
+    private void showError(String message) {
+        errorView.setVisibility(View.VISIBLE);
+        progressBar.setVisibility(View.GONE);
+        Log.e(TAG, message);
+    }
+    
     @Override
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         handleIntent(intent);
     }
-
+    
     private void handleIntent(Intent intent) {
         if (intent != null && Intent.ACTION_VIEW.equals(intent.getAction())) {
             Uri uri = intent.getData();
-            if (uri != null) {
+            if (uri != null && webView != null) {
                 webView.loadUrl(uri.toString());
             }
         }
     }
-
+    
     @Override
     public void onBackPressed() {
         if (webView.canGoBack()) {
             webView.goBack();
         } else {
-            super.onBackPressed();
+            showExitDialog();
         }
     }
-
+    
+    private void showExitDialog() {
+        new AlertDialog.Builder(this)
+            .setTitle("Salir de OpenHands")
+            .setMessage("¿Estás seguro de que quieres salir?")
+            .setPositiveButton("Sí", (dialog, which) -> finish())
+            .setNegativeButton("No", null)
+            .show();
+    }
+    
     @Override
     protected void onDestroy() {
         if (webView != null) {
             webView.destroy();
         }
         super.onDestroy();
+    }
+    
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (webView != null) {
+            webView.onResume();
+        }
+    }
+    
+    @Override
+    protected void onPause() {
+        super.onPause();
+        if (webView != null) {
+            webView.onPause();
+        }
     }
 }
