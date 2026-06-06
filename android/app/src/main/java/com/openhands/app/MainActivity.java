@@ -12,8 +12,6 @@ import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
-import android.view.Window;
-import android.webkit.ClientCertRequest;
 import android.webkit.CookieManager;
 import android.webkit.DownloadListener;
 import android.webkit.SslErrorHandler;
@@ -25,13 +23,6 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.ProgressBar;
-import android.widget.Toast;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.util.Map;
-import java.util.HashMap;
 
 public class MainActivity extends Activity {
 
@@ -61,8 +52,7 @@ public class MainActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
-        // Pantalla completa sin título
-        requestWindowFeature(Window.FEATURE_NO_TITLE);
+        // Pantalla completa sin título (usar tema en manifest)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
             if ((getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0) {
                 WebView.setWebContentsDebuggingEnabled(true);
@@ -175,7 +165,8 @@ public class MainActivity extends Activity {
             
             @Override
             public void onReceivedTitle(WebView view, String title) {
-                getActionBar().setTitle(title);
+                // Title received - could log it if needed
+                Log.d(TAG, "Page title: " + title);
             }
             
             @Override
