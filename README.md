@@ -1,6 +1,39 @@
 # OpenHands Android App
 
-An Android application wrapper for OpenHands - the AI Software Agent platform.
+![Android CI](https://github.com/jereidk/openhands-android/workflows/Android%20CI/CD/badge.svg)
+![Release](https://img.shields.io/github/v/release/jereidk/openhands-android?include_prereleases)
+![License](https://img.shields.io/github/license/jereidk/openhands-android)
+
+> ⚠️ **Wrapper no oficial** para la plataforma [OpenHands](https://www.all-hands.dev) creada por [All-Hands-AI](https://github.com/All-Hands-AI/OpenHands).
+
+---
+
+## 🏢 Sobre OpenHands
+
+**OpenHands** es un Agente de Software con IA que te ayuda a construir, probar y desplegar código. Este wrapper permite acceder a OpenHands desde dispositivos Android.
+
+- 🌐 [Sitio web](https://www.all-hands.dev)
+- 📖 [Documentación](https://docs.openhands.dev)
+- 💬 [Discord](https://discord.gg/YS茄子MST8)
+- 🐙 [Repositorio principal](https://github.com/All-Hands-AI/OpenHands)
+
+## 👨‍💻 Créditos
+
+| Rol | Descripción |
+|-----|-------------|
+| **OpenHands AI** | Agente IA utilizado para generar este wrapper |
+| **All-Hands-AI** | Creadores de la plataforma OpenHands original |
+
+---
+
+## 🛡️ Legal y Licencia
+
+- Este es un proyecto **no oficial** y **no afiliado** con All-Hands-AI
+- **OpenHands®** es marca registrada de All-Hands-AI
+- Ver [LICENSE](LICENSE) para términos completos
+- El uso está sujeto a los [Términos de Servicio de OpenHands](https://www.all-hands.dev/terms)
+
+---
 
 ## 📱 Features
 
