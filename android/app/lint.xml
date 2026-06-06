@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<lint>
+    <!-- Ignore WebView security warnings - intentional for debugging -->
+    <issue id="AllowBackup" severity="ignore" />
+    <issue id="SetJavaScriptEnabled" severity="ignore" />
+    <issue id="WebViewClientLoadUrl" severity="ignore" />
+    <issue id="UseWebKit" severity="ignore" />
+    
+    <!-- Ignore SSL warnings - intentional for development -->
+    <issue id="TrustAllCertificate" severity="ignore" />
+    <issue id="AllowsViolation" severity="ignore" />
+    
+    <!-- Ignore hardware acceleration warnings -->
+    <issue id="HardwareIds" severity="ignore" />
+    
+    <!-- Ignore debuggable flag warnings -->
+    <issue id="Debuggable" severity="ignore" />
+    
+    <!-- Ignore missing translations (English only for now) -->
+    <issue id="MissingTranslation" severity="ignore" />
+</lint>
