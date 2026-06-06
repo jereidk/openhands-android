@@ -27,6 +27,7 @@ env:
   ANDROID_COMPILE_SDK: '34'
   ANDROID_BUILD_TOOLS: '8.1.0'
   GRADLE_OPTS: '-Dorg.gradle.jvmargs=-Xmx2048m -Dorg.gradle.daemon=false'
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
 
 jobs:
   # ═══════════════════════════════════════════════════════════

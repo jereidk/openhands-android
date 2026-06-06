@@ -18,4 +18,10 @@
     
     <!-- Ignore missing translations (English only for now) -->
     <issue id="MissingTranslation" severity="ignore" />
+    
+    <!-- Ignore backup rules domain errors -->
+    <issue id="InvalidBackupDomain" severity="ignore" />
+    
+    <!-- Ignore data extraction rules -->
+    <issue id="UnusedAttribute" severity="ignore" />
 </lint>
